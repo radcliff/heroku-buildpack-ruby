@@ -424,7 +424,7 @@ WARNING
 
   def latest_node_version
     @latest_node_version ||= begin
-                               @fetcher[:node].fetch('manifest.nodejs')
+                               @fetchers[:node].fetch('manifest.nodejs')
                                File.read('manifest.nodejs').split("\n").first
                              end
   end
