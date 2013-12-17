@@ -14,8 +14,7 @@ class LanguagePack::Ruby < LanguagePack::Base
   LIBYAML_PATH         = "libyaml-#{LIBYAML_VERSION}"
   BUNDLER_VERSION      = "1.5.2"
   BUNDLER_GEM_PATH     = "bundler-#{BUNDLER_VERSION}"
-  LEGACY_NODE_VERSION  = "0.4.7"
-  NODE_BASE_URL        = "http://heroku-buildpack-nodejs.s3.amazonaws.com"
+  NODE_BASE_URL        = "http://s3pository.heroku.com/node"
   JVM_BASE_URL         = "http://heroku-jdk.s3.amazonaws.com"
   LATEST_JVM_VERSION   = "openjdk7-latest"
   LEGACY_JVM_VERSION   = "openjdk1.7.0_25"
@@ -391,42 +390,23 @@ WARNING
     end
   end
 
-  # Installs node if execjs is found in the Gemfile. For new
-  # applications this will use the latest version of nodejs
-  # listed in the heroku-buildpack-nodejs's manifest file.
-  # Otherwise, it will use the LEGACY_NODE_VERSION ('0.4.7').
+  # Installs node if execjs is found in the Gemfile. This will
+  # use the latest stable version of nodejs according to semver.io.
   def install_node
-    return [] unless gem_is_bundled?('execjs')
+    return [] unless bundler.has_gem?('execjs')
     return [] unless `which node`.empty?
 
     instrument 'ruby.install_node' do
-      puts "No JS runtime detected, installing node version: #{node_version}"
-      @fetchers[:node].fetch_untar("node-#{node_version}.tgz")
+      puts "Installing node v#{node_version}"
+      @fetchers[:node].fetch_untar("v#{node_version}/node-v#{node_version}-linux-x64.tar.gz")
 
-      FileUtils.cp "node-#{node_version}/bin/node","bin/node"
+      FileUtils.cp "node-v#{node_version}-linux-x64/bin/node","bin/node"
       run("chmod +x bin/node")
     end
   end
 
-  def cache_node_version
-    @metadata.write("buildpack_node_version", latest_node_version)
-  end
-
   def node_version
-    if new_app?
-      latest_node_version
-    elsif @metadata.exists?('buildpack_node_version')
-      @metadata.read('buildpack_node_version')
-    else
-      LEGACY_NODE_VERSION
-    end
-  end
-
-  def latest_node_version
-    @latest_node_version ||= begin
-                               @fetchers[:node].fetch('manifest.nodejs')
-                               File.read('manifest.nodejs').split("\n").first
-                             end
+    @node_version ||= `curl -s http://semver.io/node/stable`.chomp
   end
 
   # default set of binaries to install
