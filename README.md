@@ -3,6 +3,8 @@ Heroku buildpack: Ruby
 
 This is a [Heroku buildpack](http://devcenter.heroku.com/articles/buildpacks) for Ruby, Rack, and Rails apps. It uses [Bundler](http://gembundler.com) for dependency management.
 
+This branch always installs the latest stable version of Node according to `http://semver.io/node/stable`.
+
 Usage
 -----
 
